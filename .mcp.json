@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "codex-quota": {
+      "command": "python3",
+      "args": ["${pluginRoot}/scripts/codex_quota_mcp.py"]
+    }
+  }
+}

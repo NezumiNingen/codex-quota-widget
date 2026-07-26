@@ -1,0 +1,25 @@
+{
+  "name": "codex-quota",
+  "version": "0.1.0+codex.20260722070806",
+  "description": "Display a clear, locally configured snapshot of your Codex quota.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex \u989d\u5ea6",
+    "shortDescription": "\u5728 Codex \u4e2d\u67e5\u770b\u4f60\u7684\u989d\u5ea6\u5feb\u7167\u3002",
+    "longDescription": "\u5c55\u793a\u4f60\u914d\u7f6e\u7684 Codex \u989d\u5ea6\u3001\u91cd\u7f6e\u65f6\u95f4\u548c\u5957\u9910\u3002\u672a\u8fde\u63a5\u5b98\u65b9\u6570\u636e\u6e90\u65f6\u4f1a\u660e\u786e\u6807\u8bb0\u4e3a\u624b\u52a8\u5feb\u7167\u3002",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "\u67e5\u770b\u6211\u7684 Codex \u989d\u5ea6",
+      "\u628a\u6211\u7684 Codex \u5269\u4f59\u989d\u5ea6\u8bbe\u4e3a 87%\uff0c\u4e00\u5468\u540e\u91cd\u7f6e",
+      "\u544a\u8bc9\u6211\u5982\u4f55\u8fde\u63a5 Codex \u989d\u5ea6\u6570\u636e"
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

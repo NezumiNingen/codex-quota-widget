@@ -1,0 +1,5 @@
+.DS_Store
+macos-app/.build/
+scripts/__pycache__/
+*.py[cod]
+*.log
