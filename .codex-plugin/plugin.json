@@ -7,18 +7,18 @@
   },
   "skills": "./skills/",
   "interface": {
-    "displayName": "Codex 额度",
-    "shortDescription": "实时查看本机 Codex 的套餐、额度和重置时间。",
-    "longDescription": "通过本机 Codex app-server 读取实时套餐、额度、重置时间、Credits 和 token 用量，并在 macOS 桌面气泡中显示。",
+    "displayName": "Codex Quota",
+    "shortDescription": "View your local Codex plan, remaining quota, and reset time.",
+    "longDescription": "Reads live plan, quota, reset time, Credits, and token usage through the local Codex app-server, then shows them in a compact macOS desktop bubble.",
     "developerName": "Local developer",
     "category": "Productivity",
     "capabilities": [
       "Interactive"
     ],
     "defaultPrompt": [
-      "查看我的 Codex 实时额度",
-      "显示当前 Codex 套餐和重置时间",
-      "说明 Codex 额度同步状态"
+      "Show my live Codex quota",
+      "Show my Codex plan and reset time",
+      "Explain the Codex quota sync status"
     ]
   },
   "mcpServers": "./.mcp.json"
