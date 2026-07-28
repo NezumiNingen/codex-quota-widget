@@ -70,8 +70,8 @@ private struct Ring: View {
                 .shadow(color: .cyan.opacity(0.35), radius: diameter * 0.04)
             VStack(spacing: 0) {
                 Text(value == floor(value) ? "\(Int(value))%" : String(format: "%.1f%%", value))
-                    .font(.system(size: diameter * 0.25, weight: .bold, design: .rounded))
-                Text("剩余").font(.system(size: diameter * 0.09, weight: .medium, design: .rounded)).foregroundStyle(.black.opacity(0.52))
+                    .font(.system(size: diameter * 0.25, weight: .bold))
+                Text("剩余").font(.system(size: diameter * 0.09, weight: .medium)).foregroundStyle(.black.opacity(0.52))
             }
         }
         .frame(width: diameter, height: diameter)
@@ -83,8 +83,8 @@ private struct Info: View {
     let value: String
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(.system(size: 17, weight: .bold, design: .rounded)).foregroundStyle(.black.opacity(0.42))
-            Text(value).font(.system(size: value.count > 8 ? 19 : 25, weight: .semibold, design: .rounded)).foregroundStyle(.black.opacity(0.86))
+            Text(title).font(.system(size: 17, weight: .bold)).foregroundStyle(.black.opacity(0.42))
+            Text(value).font(.system(size: 22, weight: .semibold)).foregroundStyle(.black.opacity(0.86))
         }
     }
 }
@@ -108,24 +108,24 @@ private struct DesktopCard: View {
 
     var body: some View {
         quota(displayedSnapshot)
-        .frame(width: 352, height: 352)
+        .frame(width: 368, height: 368)
         .scaleEffect(0.68, anchor: .topLeading)
-        .frame(width: 240, height: 240, alignment: .topLeading)
+        .frame(width: 250, height: 250, alignment: .topLeading)
     }
 
     private func quota(_ snapshot: Snapshot) -> some View {
         VStack(alignment: .leading, spacing: 13) {
             HStack {
                 Text("Codex 余量")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(.white.opacity(0.95))
                 Spacer()
                 Text(snapshot.plan ?? "PLUS")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.white.opacity(0.92))
             }
-            HStack(spacing: 13) {
-                Ring(value: value, diameter: 130)
+            HStack(spacing: 18) {
+                Ring(value: value, diameter: 145)
                 VStack(alignment: .leading, spacing: 12) {
                     Info(title: "周期", value: snapshot.period ?? "1周")
                     Divider().overlay(.white.opacity(0.34))
@@ -133,7 +133,7 @@ private struct DesktopCard: View {
                     Divider().overlay(.white.opacity(0.34))
                     Info(title: "点数余额", value: creditBalance(snapshot))
                 }
-                .padding(.leading, 8)
+                .padding(.leading, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             VStack(spacing: 7) {
@@ -147,7 +147,7 @@ private struct DesktopCard: View {
                     Text("刚刚更新")
                     Spacer()
                     Text("已用 \(Int((100 - value).rounded()))%")
-                }.font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.72))
+                }.font(.system(size: 14, weight: .semibold)).foregroundStyle(.white.opacity(0.72))
             }
         }
         .padding(24)
@@ -171,7 +171,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
         let content = NSHostingView(rootView: DesktopCard())
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 240, height: 240), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 250, height: 250), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
         panel.contentView = content
         panel.isOpaque = false
         panel.backgroundColor = .clear

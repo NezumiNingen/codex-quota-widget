@@ -8,7 +8,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version-by-version updates.
 
 - Shows the live Credits count returned by Codex as points, refreshed every minute.
 - Uses one rounded typeface throughout the bubble.
-- Enlarges the quota ring and adjusts the bubble to a roomier 240 px layout.
+- Enlarges the quota ring and adjusts the bubble to a roomier 250 px layout.
 - Adds spacing between the ring and the detail column for better readability.
 
 ## Live data and privacy

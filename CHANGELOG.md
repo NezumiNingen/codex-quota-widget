@@ -11,8 +11,8 @@ All notable changes to Codex Quota Widget are documented here.
 ### Changed
 
 - Unified the desktop bubble typography with a rounded typeface.
-- Enlarged the quota ring and adjusted the bubble to a 240 px layout.
-- Increased the spacing between the quota ring and the details column.
+- Enlarged the quota ring and adjusted the bubble to a 250 px layout.
+- Increased the spacing between the quota ring and the left-aligned details column.
 - Clarified that the Credits value is a point balance, not a converted dollar amount.
 
 ## 0.1.0
