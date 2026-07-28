@@ -2,6 +2,8 @@
 
 A compact macOS desktop bubble that shows your live Codex plan, remaining quota, reset time, and usage progress.
 
+See [CHANGELOG.md](CHANGELOG.md) for version-by-version updates.
+
 ## Latest update
 
 - Shows the live Credits count returned by Codex as points, refreshed every minute.
