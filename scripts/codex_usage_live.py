@@ -110,7 +110,7 @@ def fetch_snapshot() -> dict[str, Any]:
     plan = str(limits.get("planType") or account.get("planType") or "unknown").upper()
     credits = limits.get("credits") or {}
     usage = response[3].get("summary") or {}
-    return {
+    snapshot = {
         "remainingPercent": max(0, min(100, round(100 - used, 1))),
         "period": human_period(primary.get("windowDurationMins")),
         "resetAt": reset_label,
@@ -120,6 +120,7 @@ def fetch_snapshot() -> dict[str, Any]:
         "credits": {"hasCredits": bool(credits.get("hasCredits")), "unlimited": bool(credits.get("unlimited")), "balance": credits.get("balance")},
         "usage": {key: usage.get(key) for key in ("lifetimeTokens", "peakDailyTokens", "currentStreakDays", "longestStreakDays")},
     }
+    return snapshot
 
 
 def write_snapshot(snapshot: dict[str, Any]) -> None:

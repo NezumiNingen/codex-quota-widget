@@ -6,13 +6,21 @@ private struct Snapshot: Codable {
     let period: String?
     let resetAt: String?
     let plan: String?
+    let credits: Credits?
+
+    struct Credits: Codable {
+        let hasCredits: Bool?
+        let unlimited: Bool?
+        let balance: String?
+    }
 }
 
 private let previewSnapshot = Snapshot(
     remainingPercent: 87,
     period: "1周",
     resetAt: "7月25日 11:24",
-    plan: "PRO"
+    plan: "PRO",
+    credits: .init(hasCredits: true, unlimited: false, balance: "2.28")
 )
 
 @MainActor
@@ -63,7 +71,7 @@ private struct Ring: View {
             VStack(spacing: 0) {
                 Text(value == floor(value) ? "\(Int(value))%" : String(format: "%.1f%%", value))
                     .font(.system(size: diameter * 0.25, weight: .bold, design: .rounded))
-                Text("剩余").font(.system(size: diameter * 0.09, weight: .medium)).foregroundStyle(.black.opacity(0.52))
+                Text("剩余").font(.system(size: diameter * 0.09, weight: .medium, design: .rounded)).foregroundStyle(.black.opacity(0.52))
             }
         }
         .frame(width: diameter, height: diameter)
@@ -75,8 +83,8 @@ private struct Info: View {
     let value: String
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(.black.opacity(0.42))
-            Text(value).font(.system(size: 26, weight: .semibold, design: .rounded)).foregroundStyle(.black.opacity(0.86))
+            Text(title).font(.system(size: 17, weight: .bold, design: .rounded)).foregroundStyle(.black.opacity(0.42))
+            Text(value).font(.system(size: value.count > 8 ? 19 : 25, weight: .semibold, design: .rounded)).foregroundStyle(.black.opacity(0.86))
         }
     }
 }
@@ -86,31 +94,46 @@ private struct DesktopCard: View {
     private var displayedSnapshot: Snapshot { store.snapshot ?? previewSnapshot }
     private var value: Double { min(max(displayedSnapshot.remainingPercent, 0), 100) }
 
+    private func creditBalance(_ snapshot: Snapshot) -> String {
+        guard snapshot.credits?.hasCredits == true,
+              snapshot.credits?.unlimited != true,
+              let rawBalance = snapshot.credits?.balance,
+              let balance = Decimal(string: rawBalance) else { return "—" }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        return "\(formatter.string(from: NSDecimalNumber(decimal: balance)) ?? "—") 点"
+    }
+
     var body: some View {
         quota(displayedSnapshot)
-        .frame(width: 326, height: 326)
+        .frame(width: 352, height: 352)
         .scaleEffect(0.68, anchor: .topLeading)
-        .frame(width: 222, height: 222, alignment: .topLeading)
+        .frame(width: 240, height: 240, alignment: .topLeading)
     }
 
     private func quota(_ snapshot: Snapshot) -> some View {
         VStack(alignment: .leading, spacing: 13) {
             HStack {
                 Text("Codex 余量")
-                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.95))
                 Spacer()
                 Text(snapshot.plan ?? "PLUS")
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.92))
             }
-            HStack(spacing: 15) {
-                Ring(value: value, diameter: 132)
+            HStack(spacing: 13) {
+                Ring(value: value, diameter: 130)
                 VStack(alignment: .leading, spacing: 12) {
                     Info(title: "周期", value: snapshot.period ?? "1周")
                     Divider().overlay(.white.opacity(0.34))
                     Info(title: "重置", value: snapshot.resetAt ?? "未设置")
+                    Divider().overlay(.white.opacity(0.34))
+                    Info(title: "点数余额", value: creditBalance(snapshot))
                 }
+                .padding(.leading, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             VStack(spacing: 7) {
@@ -124,7 +147,7 @@ private struct DesktopCard: View {
                     Text("刚刚更新")
                     Spacer()
                     Text("已用 \(Int((100 - value).rounded()))%")
-                }.font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.72))
+                }.font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.72))
             }
         }
         .padding(24)
@@ -148,7 +171,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
         let content = NSHostingView(rootView: DesktopCard())
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 222, height: 222), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 240, height: 240), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
         panel.contentView = content
         panel.isOpaque = false
         panel.backgroundColor = .clear

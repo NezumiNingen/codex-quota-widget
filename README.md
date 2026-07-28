@@ -2,9 +2,18 @@
 
 A compact macOS desktop bubble that shows your live Codex plan, remaining quota, reset time, and usage progress.
 
+## Latest update
+
+- Shows the live Credits count returned by Codex as points, refreshed every minute.
+- Uses one rounded typeface throughout the bubble.
+- Enlarges the quota ring and adjusts the bubble to a roomier 240 px layout.
+- Adds spacing between the ring and the detail column for better readability.
+
 ## Live data and privacy
 
 Live sync uses read-only account requests from the local Codex `app-server` to retrieve plan, quota, reset time, Credits, and token usage. It does not read, save, or display sign-in tokens or email addresses. The sanitized result is stored only in `~/.codex/codex-quota-live.json`, which the desktop bubble reads automatically.
+
+The bubble displays the live Credits count reported by Codex as points (for example, `238.06 点`), not as a converted dollar balance.
 
 ## Persistent desktop bubble
 
