@@ -7,6 +7,13 @@ private struct Snapshot: Codable {
     let resetAt: String?
     let plan: String?
     let credits: Credits?
+    let shortWindow: QuotaWindow?
+
+    struct QuotaWindow: Codable {
+        let remainingPercent: Double
+        let period: String?
+        let resetAt: String?
+    }
 
     struct Credits: Codable {
         let hasCredits: Bool?
@@ -20,7 +27,8 @@ private let previewSnapshot = Snapshot(
     period: "1周",
     resetAt: "7月25日 11:24",
     plan: "PRO",
-    credits: .init(hasCredits: true, unlimited: false, balance: "2.28")
+    credits: .init(hasCredits: true, unlimited: false, balance: "2.28"),
+    shortWindow: .init(remainingPercent: 74, period: "5小时", resetAt: "今天 18:30")
 )
 
 @MainActor
@@ -94,6 +102,10 @@ private struct DesktopCard: View {
     private var displayedSnapshot: Snapshot { store.snapshot ?? previewSnapshot }
     private var value: Double { min(max(displayedSnapshot.remainingPercent, 0), 100) }
 
+    private func shortWindowValue(_ snapshot: Snapshot) -> Double {
+        min(max(snapshot.shortWindow?.remainingPercent ?? 0, 0), 100)
+    }
+
     private func creditBalance(_ snapshot: Snapshot) -> String {
         guard snapshot.credits?.hasCredits == true,
               snapshot.credits?.unlimited != true,
@@ -137,16 +149,17 @@ private struct DesktopCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             VStack(spacing: 7) {
+                let shortValue = shortWindowValue(snapshot)
                 GeometryReader { proxy in
                     ZStack(alignment: .leading) {
                         Capsule().fill(.white.opacity(0.28))
-                        Capsule().fill(LinearGradient(colors: [.green, .mint, .cyan, .blue, .purple], startPoint: .leading, endPoint: .trailing)).frame(width: proxy.size.width * value / 100)
+                        Capsule().fill(LinearGradient(colors: [.green, .mint, .cyan, .blue, .purple], startPoint: .leading, endPoint: .trailing)).frame(width: proxy.size.width * shortValue / 100)
                     }
                 }.frame(height: 13)
                 HStack {
-                    Text("刚刚更新")
+                    Text(snapshot.shortWindow == nil ? "5小时额度 · 等待同步" : "5小时额度 · \(snapshot.shortWindow?.resetAt ?? "刚刚更新") 重置")
                     Spacer()
-                    Text("已用 \(Int((100 - value).rounded()))%")
+                    Text(snapshot.shortWindow == nil ? "—" : "已用 \(Int((100 - shortValue).rounded()))%")
                 }.font(.system(size: 14, weight: .semibold)).foregroundStyle(.white.opacity(0.72))
             }
         }

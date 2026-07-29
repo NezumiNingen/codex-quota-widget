@@ -71,6 +71,21 @@ def human_period(minutes: int | None) -> str:
     return f"{minutes}分钟"
 
 
+def window_snapshot(window: dict[str, Any]) -> dict[str, Any] | None:
+    if not window:
+        return None
+    used = float(window.get("usedPercent", 0))
+    resets_at = window.get("resetsAt")
+    reset_label = None
+    if isinstance(resets_at, (int, float)):
+        reset_label = datetime.fromtimestamp(resets_at).strftime("%-m月%-d日 %H:%M")
+    return {
+        "remainingPercent": max(0, min(100, round(100 - used, 1))),
+        "period": human_period(window.get("windowDurationMins")),
+        "resetAt": reset_label,
+    }
+
+
 def fetch_snapshot() -> dict[str, Any]:
     binary = codex_path()
     if not Path(binary).exists() and not shutil.which(binary):
@@ -101,19 +116,16 @@ def fetch_snapshot() -> dict[str, Any]:
 
     limits = response[2].get("rateLimitsByLimitId", {}).get("codex") or response[2]["rateLimits"]
     primary = limits.get("primary") or {}
-    used = float(primary.get("usedPercent", 0))
-    resets_at = primary.get("resetsAt")
-    reset_label = "未设置"
-    if isinstance(resets_at, (int, float)):
-        reset_label = datetime.fromtimestamp(resets_at).strftime("%-m月%-d日 %H:%M")
+    primary_snapshot = window_snapshot(primary) or {"remainingPercent": 0, "period": "未设置", "resetAt": "未设置"}
     account = response[4].get("account") or {}
     plan = str(limits.get("planType") or account.get("planType") or "unknown").upper()
     credits = limits.get("credits") or {}
     usage = response[3].get("summary") or {}
     snapshot = {
-        "remainingPercent": max(0, min(100, round(100 - used, 1))),
-        "period": human_period(primary.get("windowDurationMins")),
-        "resetAt": reset_label,
+        "remainingPercent": primary_snapshot["remainingPercent"],
+        "period": primary_snapshot["period"],
+        "resetAt": primary_snapshot["resetAt"],
+        "shortWindow": window_snapshot(limits.get("secondary") or {}),
         "plan": plan,
         "source": "Codex app-server",
         "updatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),

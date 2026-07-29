@@ -7,6 +7,7 @@ All notable changes to Codex Quota Widget are documented here.
 ### Added
 
 - Live Codex Credits balance, displayed as points and refreshed every minute.
+- A dedicated bottom bar for the 5-hour quota window, which activates automatically when the local Codex API returns that window.
 
 ### Changed
 
