@@ -1,6 +1,6 @@
 .DS_Store
-macos-app/.build/
-macos-app/.swiftpm/
+widgets/*/macos-app/.build/
+widgets/*/macos-app/.swiftpm/
 scripts/__pycache__/
 *.py[cod]
 *.log

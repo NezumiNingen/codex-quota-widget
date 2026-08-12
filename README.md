@@ -21,7 +21,9 @@ The bubble displays the live Credits count reported by Codex as points (for exam
 
 ## Persistent desktop bubble
 
-The plugin includes a compact frosted-glass desktop bubble. After running `scripts/start-desktop-widget.sh`, it behaves like a macOS desktop widget: it appears only on the desktop, follows every desktop space, and remembers its dragged position. Snapshot changes are reflected in the bubble within two seconds.
+The plugin includes two independent frosted-glass desktop widgets. The original quota bubble is in `widgets/quota-widget/`; the usage insights bubble is in `widgets/usage-widget/`. Each folder has its own `start.sh`, executable, position key, and LaunchAgent, so restarting one does not restart the other.
+
+See [widgets/README.md](widgets/README.md) for the folder layout. The live sync scripts remain at repository level because both widgets read the same sanitized snapshot.
 
 The insights card appears as a wide horizontal glass strip near the lower-left desktop area. It uses the same live snapshot, lifetime token total, and date-aligned daily token buckets for the last 90 days.
 

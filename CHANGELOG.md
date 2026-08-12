@@ -20,6 +20,7 @@ All notable changes to Codex Quota Widget are documented here.
 - Clarified that the Credits value is a point balance, not a converted dollar amount.
 - Added daily token buckets to the sanitized live snapshot so the new charts use local Codex usage data.
 - Kept the lifetime token total from the usage summary as the source for the new cumulative row.
+- Split the original quota bubble and the usage insights bubble into separate widget folders and processes.
 
 ## 0.1.0
 

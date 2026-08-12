@@ -548,6 +548,11 @@ private struct InsightsPanelView: View {
 
 @MainActor
 private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+    private enum WidgetMode {
+        case quota
+        case usage
+    }
+
     private var panel: NSPanel?
     private var insightsPanel: NSPanel?
     private let positionKey = "CodexQuotaDesktop.position"
@@ -556,17 +561,30 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private var insightsMoveMode = true
     private var lockTimer: Timer?
     private var insightsLockTimer: Timer?
+    private let mode: WidgetMode
+
+    override init() {
+        mode = CommandLine.arguments.contains("--usage") ? .usage : .quota
+        super.init()
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
+        switch mode {
+        case .quota:
+            createQuotaPanel()
+        case .usage:
+            createInsightsPanel()
+        }
+    }
+
+    private func createQuotaPanel() {
         let content = NSHostingView(rootView: DesktopCard())
         let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 250, height: 250), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
         panel.contentView = content
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        // Start in a temporary movable layer. After the first drag, it returns
-        // to the desktop layer so it does not cover normal app windows.
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary]
         panel.isMovableByWindowBackground = true
@@ -582,7 +600,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         lockTimer = Timer.scheduledTimer(withTimeInterval: 90, repeats: false) { [weak self] _ in
             self?.lockToDesktop()
         }
-        createInsightsPanel()
     }
 
     func windowDidMove(_ notification: Notification) {
