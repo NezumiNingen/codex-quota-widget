@@ -11,6 +11,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version-by-version updates.
 - Uses one rounded typeface throughout the bubble.
 - Enlarges the quota ring and adjusts the bubble to a roomier 250 px layout.
 - Adds spacing between the ring and the detail column for better readability.
+- Adds a separate wide glass insights card for Token goals, recent 7-day usage, and a 90-day token heatmap.
 
 ## Live data and privacy
 
@@ -21,6 +22,8 @@ The bubble displays the live Credits count reported by Codex as points (for exam
 ## Persistent desktop bubble
 
 The plugin includes a compact frosted-glass desktop bubble. After running `scripts/start-desktop-widget.sh`, it behaves like a macOS desktop widget: it appears only on the desktop, follows every desktop space, and remembers its dragged position. Snapshot changes are reflected in the bubble within two seconds.
+
+The insights card appears as a wide horizontal glass strip near the lower-left desktop area. It uses the same live snapshot and daily token buckets for the last 90 days; the visual targets are `300M` daily and `3B` weekly.
 
 You can add `scripts/start-desktop-widget.sh` as a macOS login item to restore the bubble in its previous position after restarting your Mac.
 

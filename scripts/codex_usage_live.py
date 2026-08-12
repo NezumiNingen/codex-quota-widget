@@ -14,7 +14,7 @@ import shutil
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -121,6 +121,21 @@ def fetch_snapshot() -> dict[str, Any]:
     plan = str(limits.get("planType") or account.get("planType") or "unknown").upper()
     credits = limits.get("credits") or {}
     usage = response[3].get("summary") or {}
+    raw_buckets = response[3].get("dailyUsageBuckets") or usage.get("dailyUsageBuckets") or []
+    bucket_map = {
+        str(item.get("startDate")): int(item.get("tokens") or 0)
+        for item in raw_buckets
+        if isinstance(item, dict) and item.get("startDate")
+    }
+    today = datetime.now().date()
+    daily_usage_90 = [
+        {
+            "date": (today - timedelta(days=offset)).isoformat(),
+            "tokens": bucket_map.get((today - timedelta(days=offset)).isoformat(), 0),
+        }
+        for offset in range(89, -1, -1)
+    ]
+    recent_7 = daily_usage_90[-7:]
     snapshot = {
         "remainingPercent": primary_snapshot["remainingPercent"],
         "period": primary_snapshot["period"],
@@ -131,6 +146,9 @@ def fetch_snapshot() -> dict[str, Any]:
         "updatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "credits": {"hasCredits": bool(credits.get("hasCredits")), "unlimited": bool(credits.get("unlimited")), "balance": credits.get("balance")},
         "usage": {key: usage.get(key) for key in ("lifetimeTokens", "peakDailyTokens", "currentStreakDays", "longestStreakDays")},
+        "tokenGoals": {"daily": 300_000_000, "weekly": 3_000_000_000},
+        "dailyUsage90": daily_usage_90,
+        "recent7": recent_7,
     }
     return snapshot
 
