@@ -8,9 +8,9 @@ private struct Snapshot: Codable {
     let plan: String?
     let credits: Credits?
     let shortWindow: QuotaWindow?
-    let tokenGoals: TokenGoals?
     let dailyUsage90: [DailyUsage]?
     let recent7: [DailyUsage]?
+    let usage: Usage?
 
     struct QuotaWindow: Codable {
         let remainingPercent: Double
@@ -24,9 +24,11 @@ private struct Snapshot: Codable {
         let balance: String?
     }
 
-    struct TokenGoals: Codable {
-        let daily: Int64
-        let weekly: Int64
+    struct Usage: Codable {
+        let lifetimeTokens: Int64?
+        let peakDailyTokens: Int64?
+        let currentStreakDays: Int?
+        let longestStreakDays: Int?
     }
 
     struct DailyUsage: Codable, Identifiable {
@@ -43,7 +45,6 @@ private let previewSnapshot = Snapshot(
     plan: "PRO",
     credits: .init(hasCredits: true, unlimited: false, balance: "2.28"),
     shortWindow: .init(remainingPercent: 74, period: "5小时", resetAt: "今天 18:30"),
-    tokenGoals: .init(daily: 300_000_000, weekly: 3_000_000_000),
     dailyUsage90: (0..<90).map { .init(date: "2026-01-\(String(format: "%02d", ($0 % 28) + 1))", tokens: Int64(($0 * 17_000_000) % 260_000_000)) },
     recent7: [
         .init(date: "2026-08-07", tokens: 124_036_348),
@@ -53,7 +54,8 @@ private let previewSnapshot = Snapshot(
         .init(date: "2026-08-11", tokens: 247_642_405),
         .init(date: "2026-08-12", tokens: 77_470_693),
         .init(date: "2026-08-13", tokens: 0),
-    ]
+    ],
+    usage: .init(lifetimeTokens: 2_149_318_666, peakDailyTokens: 319_601_167, currentStreakDays: 7, longestStreakDays: 11)
 )
 
 @MainActor
@@ -230,7 +232,7 @@ private struct GoalRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 4) {
-                Text(title).frame(width: 30, alignment: .leading)
+                Text(title).frame(width: 55, alignment: .leading)
                 Text("\(formatTokens(tokens)) / \(formatTokens(goal))")
                     .font(.system(size: 14, weight: .bold))
                     .lineLimit(1)
@@ -251,24 +253,42 @@ private struct GoalRow: View {
     }
 }
 
-private struct TokenGoalBlock: View {
+private struct UsageSummaryBlock: View {
     let todayTokens: Int64
     let weekTokens: Int64
-    let goals: Snapshot.TokenGoals
+    let totalTokens: Int64
 
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
             HStack(alignment: .firstTextBaseline) {
-                Label("Token 小目标", systemImage: "target")
+                Label("使用量", systemImage: "chart.bar.fill")
                     .font(.system(size: 17, weight: .bold))
                 Spacer()
-                Text("自然周")
+                Text("实时")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.72))
             }
-            GoalRow(title: "今天", tokens: todayTokens, goal: goals.daily)
-            GoalRow(title: "本周", tokens: weekTokens, goal: goals.weekly)
+            UsageRow(title: "今天", value: todayTokens)
+            UsageRow(title: "本周", value: weekTokens)
+            UsageRow(title: "总使用量", value: totalTokens)
         }
+    }
+}
+
+private struct UsageRow: View {
+    let title: String
+    let value: Int64
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .frame(width: 55, alignment: .leading)
+            Text(formatTokens(value))
+                .font(.system(size: 15, weight: .bold))
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(.white.opacity(0.92))
     }
 }
 
@@ -330,24 +350,59 @@ private struct RecentUsageChart: View {
 
 private struct UsageHeatmap: View {
     let entries: [Snapshot.DailyUsage]
+    @State private var range: UsageRange = .daily
 
-    private var cells: [Snapshot.DailyUsage] {
-        let values = Array(entries.suffix(90))
-        let filler = Array(repeating: Snapshot.DailyUsage(date: "", tokens: 0), count: max(0, 91 - values.count))
-        return Array((filler + values).prefix(91))
+    private enum UsageRange: String, CaseIterable {
+        case daily = "每日"
+        case weekly = "每周"
+        case cumulative = "累计"
     }
-    private var maximum: Double { max(Double(cells.map(\.tokens).max() ?? 1), 1) }
-    private var total: Int64 { cells.reduce(0) { $0 + $1.tokens } }
+
+    private var values: [Snapshot.DailyUsage] {
+        Array(entries.suffix(90))
+    }
+    private var maximum: Double {
+        let raw = weeks.flatMap { $0 }.map { displayedTokens(for: $0) }
+        return max(Double(raw.max() ?? 1), 1)
+    }
+    private var total: Int64 { values.reduce(0) { $0 + $1.tokens } }
+
+    private var weeks: [[Snapshot.DailyUsage]] {
+        guard let first = values.first, let firstDate = isoDate(first.date) else {
+            return Array(repeating: Array(repeating: Snapshot.DailyUsage(date: "", tokens: 0), count: 7), count: 13)
+        }
+        let calendar = Calendar.current
+        let mondayOffset = (calendar.component(.weekday, from: firstDate) + 5) % 7
+        guard let start = calendar.date(byAdding: .day, value: -mondayOffset, to: firstDate) else { return [] }
+        let byDate = Dictionary(uniqueKeysWithValues: values.map { ($0.date, $0.tokens) })
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return (0..<13).map { week in
+            (0..<7).map { weekday in
+                let offset = week * 7 + weekday
+                guard let date = calendar.date(byAdding: .day, value: offset, to: start) else {
+                    return Snapshot.DailyUsage(date: "", tokens: 0)
+                }
+                let label = formatter.string(from: date)
+                return Snapshot.DailyUsage(date: label, tokens: byDate[label] ?? 0)
+            }
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Label("近 90 天用量", systemImage: "calendar")
                     .font(.system(size: 16, weight: .bold))
-                Spacer()
-                Text("混合口径")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.66))
+                Spacer(minLength: 3)
+                HStack(spacing: 10) {
+                    ForEach(UsageRange.allCases, id: \.self) { item in
+                        Text(item.rawValue)
+                            .font(.system(size: 11, weight: item == range ? .bold : .medium))
+                            .foregroundStyle(.white.opacity(item == range ? 0.94 : 0.46))
+                            .onTapGesture { range = item }
+                    }
+                }
             }
             HStack(alignment: .top, spacing: 4) {
                 VStack(spacing: 3) {
@@ -355,12 +410,25 @@ private struct UsageHeatmap: View {
                         Text(label).font(.system(size: 8, weight: .medium)).frame(height: 12)
                     }
                 }
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(9), spacing: 2), count: 13), spacing: 2) {
-                    ForEach(Array(cells.enumerated()), id: \.offset) { item in
-                        RoundedRectangle(cornerRadius: 3, style: .continuous)
-                            .fill(cellColor(Double(item.element.tokens)))
-                            .frame(width: 9, height: 9)
+                HStack(spacing: 3) {
+                    ForEach(Array(weeks.enumerated()), id: \.offset) { week in
+                        VStack(spacing: 2) {
+                            ForEach(Array(week.element.enumerated()), id: \.offset) { day in
+                                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                    .fill(cellColor(Double(displayedTokens(for: day.element))))
+                                    .frame(width: 12, height: 12)
+                            }
+                        }
                     }
+                }
+            }
+            HStack(spacing: 0) {
+                ForEach(Array(weeks.enumerated()), id: \.offset) { item in
+                    Text(showMonthLabel(at: item.offset) ? monthLabel(for: item.element.first?.date) : "")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.64))
+                        .frame(width: 15, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             HStack(spacing: 4) {
@@ -368,13 +436,10 @@ private struct UsageHeatmap: View {
                 ForEach(0..<5, id: \.self) { step in
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
                         .fill(cellColor(maximum * Double(step) / 4))
-                        .frame(width: 9, height: 8)
+                        .frame(width: 12, height: 8)
                 }
                 Text("多").font(.system(size: 9, weight: .medium))
                 Spacer()
-                Text("合计 \(formatTokens(total))")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.72))
             }
         }
         .foregroundStyle(.white.opacity(0.92))
@@ -382,9 +447,51 @@ private struct UsageHeatmap: View {
 
     private func cellColor(_ tokens: Double) -> Color {
         let ratio = min(1, max(0, tokens / maximum))
-        return Color(red: 0.95, green: 0.24 + 0.55 * ratio, blue: 0.62 + 0.30 * ratio)
-            .opacity(0.18 + 0.78 * ratio)
+        return Color(red: 0.08 + 0.24 * ratio, green: 0.10 + 0.42 * ratio, blue: 0.14 + 0.72 * ratio)
+            .opacity(0.28 + 0.72 * ratio)
     }
+
+    private func displayedTokens(for item: Snapshot.DailyUsage) -> Int64 {
+        switch range {
+        case .daily:
+            return item.tokens
+        case .weekly:
+            guard let date = isoDate(item.date) else { return item.tokens }
+            let calendar = Calendar.current
+            let start = calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? date
+            return values.filter {
+                guard let other = isoDate($0.date) else { return false }
+                return calendar.isDate(other, equalTo: start, toGranularity: .weekOfYear)
+            }.reduce(0) { $0 + $1.tokens }
+        case .cumulative:
+            return values.filter { $0.date <= item.date }.reduce(0) { $0 + $1.tokens }
+        }
+    }
+
+    private func monthLabel(for date: String?) -> String {
+        guard let date, let value = isoDate(date) else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M月"
+        return formatter.string(from: value)
+    }
+
+    private func showMonthLabel(at index: Int) -> Bool {
+        guard index == 0 else {
+            guard let current = weeks[index].first?.date,
+                  let previous = weeks[index - 1].first?.date,
+                  let currentDate = isoDate(current),
+                  let previousDate = isoDate(previous) else { return false }
+            return Calendar.current.component(.month, from: currentDate) != Calendar.current.component(.month, from: previousDate)
+        }
+        return true
+    }
+}
+
+private func isoDate(_ value: String) -> Date? {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd"
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    return formatter.date(from: value)
 }
 
 private struct InsightsPanelView: View {
@@ -393,7 +500,6 @@ private struct InsightsPanelView: View {
 
     private var daily: [Snapshot.DailyUsage] { displayedSnapshot.dailyUsage90 ?? [] }
     private var recent: [Snapshot.DailyUsage] { displayedSnapshot.recent7 ?? Array(daily.suffix(7)) }
-    private var goals: Snapshot.TokenGoals { displayedSnapshot.tokenGoals ?? .init(daily: 300_000_000, weekly: 3_000_000_000) }
 
     private var todayTokens: Int64 {
         let formatter = DateFormatter()
@@ -413,18 +519,22 @@ private struct InsightsPanelView: View {
         return daily.filter { $0.date >= mondayString }.reduce(0) { $0 + $1.tokens }
     }
 
+    private var totalTokens: Int64 {
+        displayedSnapshot.usage?.lifetimeTokens ?? daily.reduce(0) { $0 + $1.tokens }
+    }
+
     var body: some View {
         HStack(spacing: 14) {
-            TokenGoalBlock(todayTokens: todayTokens, weekTokens: weekTokens, goals: goals)
-                .frame(width: 165, alignment: .leading)
+            UsageSummaryBlock(todayTokens: todayTokens, weekTokens: weekTokens, totalTokens: totalTokens)
+                .frame(width: 188, alignment: .leading)
             RecentUsageChart(entries: recent)
-                .frame(width: 110, alignment: .leading)
+                .frame(width: 150, alignment: .leading)
             UsageHeatmap(entries: daily)
-                .frame(width: 177, alignment: .leading)
+                .frame(width: 288, alignment: .leading)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
-        .frame(width: 520, height: 190, alignment: .topLeading)
+        .frame(width: 700, height: 190, alignment: .topLeading)
         .background {
             ZStack {
                 VisualEffect()
@@ -502,7 +612,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
 
     private func createInsightsPanel() {
         let content = NSHostingView(rootView: InsightsPanelView())
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 520, height: 190), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 700, height: 190), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
         panel.contentView = content
         panel.isOpaque = false
         panel.backgroundColor = .clear

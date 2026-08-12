@@ -146,7 +146,6 @@ def fetch_snapshot() -> dict[str, Any]:
         "updatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "credits": {"hasCredits": bool(credits.get("hasCredits")), "unlimited": bool(credits.get("unlimited")), "balance": credits.get("balance")},
         "usage": {key: usage.get(key) for key in ("lifetimeTokens", "peakDailyTokens", "currentStreakDays", "longestStreakDays")},
-        "tokenGoals": {"daily": 300_000_000, "weekly": 3_000_000_000},
         "dailyUsage90": daily_usage_90,
         "recent7": recent_7,
     }
