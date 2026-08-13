@@ -465,14 +465,40 @@ private struct HeatmapCell: View {
     let color: Color
     @Binding var hoveredDate: String?
     @Binding var selectedDate: String?
+    @State private var isHovering = false
 
     var body: some View {
         RoundedRectangle(cornerRadius: 3, style: .continuous)
             .fill(visible ? color : .clear)
             .contentShape(Rectangle())
+            .overlay {
+                if visible && isHovering {
+                    Text("\(formatTokens(item.tokens)) Token")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 4)
+                        .background(.black.opacity(0.84), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .fixedSize()
+                        .offset(y: -23)
+                        .zIndex(20)
+                }
+            }
             .onHover { hovering in
                 guard visible else { return }
+                isHovering = hovering
                 hoveredDate = hovering ? item.date : nil
+            }
+            .onContinuousHover { phase in
+                guard visible else { return }
+                switch phase {
+                case .active:
+                    isHovering = true
+                    hoveredDate = item.date
+                case .ended:
+                    isHovering = false
+                    if hoveredDate == item.date { hoveredDate = nil }
+                }
             }
             .onTapGesture {
                 guard visible else { return }
