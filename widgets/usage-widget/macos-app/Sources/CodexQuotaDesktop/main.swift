@@ -554,17 +554,18 @@ private struct InsightsPanelView: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            UsageSummaryBlock(todayTokens: todayTokens, weekTokens: weekTokens, totalTokens: totalTokens)
-                .frame(width: 150, alignment: .leading)
-            RecentUsageChart(entries: recent)
-                .frame(width: 150, alignment: .leading)
-            UsageHeatmap(entries: daily)
-                .frame(width: 212, alignment: .leading)
+        ZStack(alignment: .center) {
+            HStack(alignment: .top, spacing: 12) {
+                UsageSummaryBlock(todayTokens: todayTokens, weekTokens: weekTokens, totalTokens: totalTokens)
+                    .frame(width: 150, alignment: .leading)
+                RecentUsageChart(entries: recent)
+                    .frame(width: 150, alignment: .leading)
+                UsageHeatmap(entries: daily)
+                    .frame(width: 212, alignment: .leading)
+            }
+            .padding(.horizontal, 20)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .frame(width: 578, height: 180, alignment: .topLeading)
+        .frame(width: 578, height: 180, alignment: .center)
         .background {
             ZStack {
                 VisualEffect()
