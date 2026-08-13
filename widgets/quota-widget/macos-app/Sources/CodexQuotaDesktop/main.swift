@@ -188,7 +188,7 @@ private struct DesktopCard: View {
         .background {
             ZStack {
                 VisualEffect()
-                Color.black.opacity(0.06)
+                Color.white.opacity(0.06)
             }
             .clipShape(RoundedRectangle(cornerRadius: 58, style: .continuous))
         }

@@ -581,7 +581,7 @@ private struct InsightsPanelView: View {
         .background {
             ZStack {
                 VisualEffect()
-                Color.black.opacity(0.04)
+                Color.white.opacity(0.05)
             }
             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         }
