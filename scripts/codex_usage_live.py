@@ -127,6 +127,7 @@ def fetch_snapshot() -> dict[str, Any]:
         for item in raw_buckets
         if isinstance(item, dict) and item.get("startDate")
     }
+    usage_through = max(bucket_map) if bucket_map else None
     today = datetime.now().date()
     daily_usage_90 = [
         {
@@ -135,7 +136,8 @@ def fetch_snapshot() -> dict[str, Any]:
         }
         for offset in range(89, -1, -1)
     ]
-    recent_7 = daily_usage_90[-7:]
+    reported_daily = [item for item in daily_usage_90 if usage_through is None or item["date"] <= usage_through]
+    recent_7 = reported_daily[-7:]
     snapshot = {
         "remainingPercent": primary_snapshot["remainingPercent"],
         "period": primary_snapshot["period"],
@@ -144,6 +146,7 @@ def fetch_snapshot() -> dict[str, Any]:
         "plan": plan,
         "source": "Codex app-server",
         "updatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "usageThrough": usage_through,
         "credits": {"hasCredits": bool(credits.get("hasCredits")), "unlimited": bool(credits.get("unlimited")), "balance": credits.get("balance")},
         "usage": {"lifetimeTokens": usage.get("lifetimeTokens")},
         "dailyUsage90": daily_usage_90,

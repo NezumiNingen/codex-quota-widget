@@ -10,6 +10,7 @@ private struct Snapshot: Codable {
     let shortWindow: QuotaWindow?
     let dailyUsage90: [DailyUsage]?
     let recent7: [DailyUsage]?
+    let usageThrough: String?
     let usage: Usage?
 
     struct QuotaWindow: Codable {
@@ -44,6 +45,7 @@ private let previewSnapshot = Snapshot(
     shortWindow: nil,
     dailyUsage90: [],
     recent7: [],
+    usageThrough: nil,
     usage: nil
 )
 
@@ -241,7 +243,8 @@ private struct GoalRow: View {
 }
 
 private struct UsageSummaryBlock: View {
-    let todayTokens: Int64
+    let dayTitle: String
+    let dayTokens: Int64
     let weekTokens: Int64
     let totalTokens: Int64
 
@@ -251,7 +254,7 @@ private struct UsageSummaryBlock: View {
                 Label("Token 使用量", systemImage: "chart.bar.fill")
                     .font(.system(size: 17, weight: .bold))
             }
-            UsageRow(title: "今天", value: todayTokens)
+            UsageRow(title: dayTitle, value: dayTokens)
             UsageRow(title: "本周", value: weekTokens)
             UsageRow(title: "总使用量", value: totalTokens)
         }
@@ -333,6 +336,7 @@ private struct RecentUsageChart: View {
 
 private struct UsageHeatmap: View {
     let entries: [Snapshot.DailyUsage]
+    let usageThrough: String?
     @State private var hoveredDate: String?
     @State private var selectedDate: String?
 
@@ -438,7 +442,8 @@ private struct UsageHeatmap: View {
         guard let first = values.first?.date,
               let last = values.last?.date,
               !item.date.isEmpty else { return false }
-        return item.date >= first && item.date <= last
+        let reportedEnd = usageThrough ?? last
+        return item.date >= first && item.date <= last && item.date <= reportedEnd
     }
 
     private func monthLabel(for date: String?) -> String {
@@ -529,12 +534,16 @@ private struct InsightsPanelView: View {
     private var displayedSnapshot: Snapshot { store.snapshot ?? previewSnapshot }
 
     private var daily: [Snapshot.DailyUsage] { displayedSnapshot.dailyUsage90 ?? [] }
-    private var recent: [Snapshot.DailyUsage] { displayedSnapshot.recent7 ?? Array(daily.suffix(7)) }
+    private var reportedDaily: [Snapshot.DailyUsage] {
+        guard let usageThrough = displayedSnapshot.usageThrough else { return daily }
+        return daily.filter { $0.date <= usageThrough }
+    }
+    private var recent: [Snapshot.DailyUsage] { displayedSnapshot.recent7 ?? Array(reportedDaily.suffix(7)) }
 
-    private var todayTokens: Int64 {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return daily.last(where: { $0.date == formatter.string(from: Date()) })?.tokens ?? recent.last?.tokens ?? 0
+    private var dayTitle: String { "昨日" }
+
+    private var dayTokens: Int64 {
+        return reportedDaily.last?.tokens ?? 0
     }
 
     private var weekTokens: Int64 {
@@ -556,11 +565,11 @@ private struct InsightsPanelView: View {
     var body: some View {
         ZStack(alignment: .center) {
             HStack(alignment: .top, spacing: 12) {
-                UsageSummaryBlock(todayTokens: todayTokens, weekTokens: weekTokens, totalTokens: totalTokens)
+                UsageSummaryBlock(dayTitle: dayTitle, dayTokens: dayTokens, weekTokens: weekTokens, totalTokens: totalTokens)
                     .frame(width: 150, alignment: .leading)
                 RecentUsageChart(entries: recent)
                     .frame(width: 150, alignment: .leading)
-                UsageHeatmap(entries: daily)
+                UsageHeatmap(entries: daily, usageThrough: displayedSnapshot.usageThrough)
                     .frame(width: 212, alignment: .leading)
             }
             .padding(.horizontal, 20)
