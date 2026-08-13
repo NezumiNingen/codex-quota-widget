@@ -26,9 +26,6 @@ private struct Snapshot: Codable {
 
     struct Usage: Codable {
         let lifetimeTokens: Int64?
-        let peakDailyTokens: Int64?
-        let currentStreakDays: Int?
-        let longestStreakDays: Int?
     }
 
     struct DailyUsage: Codable, Identifiable {
@@ -39,30 +36,21 @@ private struct Snapshot: Codable {
 }
 
 private let previewSnapshot = Snapshot(
-    remainingPercent: 87,
-    period: "1周",
-    resetAt: "7月25日 11:24",
-    plan: "PRO",
-    credits: .init(hasCredits: true, unlimited: false, balance: "2.28"),
-    shortWindow: .init(remainingPercent: 74, period: "5小时", resetAt: "今天 18:30"),
-    dailyUsage90: (0..<90).map { .init(date: "2026-01-\(String(format: "%02d", ($0 % 28) + 1))", tokens: Int64(($0 * 17_000_000) % 260_000_000)) },
-    recent7: [
-        .init(date: "2026-08-07", tokens: 124_036_348),
-        .init(date: "2026-08-08", tokens: 32_057_843),
-        .init(date: "2026-08-09", tokens: 319_601_167),
-        .init(date: "2026-08-10", tokens: 5_966_744),
-        .init(date: "2026-08-11", tokens: 247_642_405),
-        .init(date: "2026-08-12", tokens: 77_470_693),
-        .init(date: "2026-08-13", tokens: 0),
-    ],
-    usage: .init(lifetimeTokens: 2_149_318_666, peakDailyTokens: 319_601_167, currentStreakDays: 7, longestStreakDays: 11)
+    remainingPercent: 0,
+    period: nil,
+    resetAt: nil,
+    plan: nil,
+    credits: nil,
+    shortWindow: nil,
+    dailyUsage90: [],
+    recent7: [],
+    usage: nil
 )
 
 @MainActor
 private final class QuotaStore: ObservableObject {
     @Published private(set) var snapshot: Snapshot?
     private let liveURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex/codex-quota-live.json")
-    private let fallbackURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex/codex-quota.json")
 
     init() {
         reload()
@@ -72,8 +60,7 @@ private final class QuotaStore: ObservableObject {
     }
 
     func reload() {
-        let url = FileManager.default.fileExists(atPath: liveURL.path) ? liveURL : fallbackURL
-        guard let data = try? Data(contentsOf: url), let value = try? JSONDecoder().decode(Snapshot.self, from: data) else {
+        guard let data = try? Data(contentsOf: liveURL), let value = try? JSONDecoder().decode(Snapshot.self, from: data) else {
             snapshot = nil
             return
         }
@@ -159,16 +146,16 @@ private struct DesktopCard: View {
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(.white.opacity(0.95))
                 Spacer()
-                Text(snapshot.plan ?? "PLUS")
+                Text(snapshot.plan ?? "—")
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.white.opacity(0.92))
             }
             HStack(spacing: 18) {
                 Ring(value: value, diameter: 145)
                 VStack(alignment: .leading, spacing: 12) {
-                    Info(title: "周期", value: snapshot.period ?? "1周")
+                    Info(title: "周期", value: snapshot.period ?? "—")
                     Divider().overlay(.white.opacity(0.34))
-                    Info(title: "重置", value: snapshot.resetAt ?? "未设置")
+                    Info(title: "重置", value: snapshot.resetAt ?? "—")
                     Divider().overlay(.white.opacity(0.34))
                     Info(title: "点数余额", value: creditBalance(snapshot))
                 }
@@ -261,7 +248,7 @@ private struct UsageSummaryBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
             HStack(alignment: .firstTextBaseline) {
-                Label("使用量", systemImage: "chart.bar.fill")
+            Label("Token 使用量", systemImage: "chart.bar.fill")
                     .font(.system(size: 17, weight: .bold))
                 Spacer()
                 Text("实时")
@@ -327,7 +314,7 @@ private struct RecentUsageChart: View {
                         .frame(maxWidth: .infinity)
                 }
             }
-            Text("总量 \(formatTokens(total))")
+            Text("Token 总量 \(formatTokens(total))")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.72))
         }
@@ -585,7 +572,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.level = .floating
+        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary]
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
@@ -623,7 +610,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
 
     private func lockToDesktop() {
         guard moveMode, let panel else { return }
-        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)))
+        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
         moveMode = false
     }
 
@@ -634,7 +621,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.level = .floating
+        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary]
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
@@ -655,7 +642,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
 
     private func lockInsightsToDesktop() {
         guard insightsMoveMode, let insightsPanel else { return }
-        insightsPanel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)))
+        insightsPanel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
         insightsMoveMode = false
     }
 }

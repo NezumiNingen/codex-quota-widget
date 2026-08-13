@@ -1,6 +1,6 @@
 {
   "name": "codex-quota",
-  "version": "0.1.0+codex.20260722070806",
+  "version": "0.1.0+codex.20260813084513",
   "description": "A live macOS desktop widget for Codex plan, usage, and reset time.",
   "author": {
     "name": "Local developer"

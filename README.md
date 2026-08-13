@@ -11,11 +11,11 @@ See [CHANGELOG.md](CHANGELOG.md) for version-by-version updates.
 - Uses one rounded typeface throughout the bubble.
 - Enlarges the quota ring and adjusts the bubble to a roomier 250 px layout.
 - Adds spacing between the ring and the detail column for better readability.
-- Adds a separate wide glass insights card for today/week/lifetime usage, a recent 7-day chart, and a date-aligned 90-day token heatmap.
+- Adds a separate wide glass insights card for today/week/lifetime Token usage, a recent 7-day Token chart, and a date-aligned 90-day Token heatmap.
 
 ## Live data and privacy
 
-Live sync uses read-only account requests from the local Codex `app-server` to retrieve plan, quota, reset time, Credits, and token usage. It does not read, save, or display sign-in tokens or email addresses. The sanitized result is stored only in `~/.codex/codex-quota-live.json`, which the desktop bubble reads automatically.
+Live sync uses read-only account requests from the local Codex `app-server` to retrieve plan, quota, reset time, Credits, and daily token usage. It does not read, save, or display sign-in tokens or email addresses. The sanitized result is stored only in `~/.codex/codex-quota-live.json`, which the desktop bubble reads automatically. Screenshot numbers are never embedded; unavailable live values show as `—`.
 
 The bubble displays the live Credits count reported by Codex as points (for example, `238.06 点`), not as a converted dollar balance.
 
@@ -25,7 +25,7 @@ The plugin includes two independent frosted-glass desktop widgets. The original 
 
 See [widgets/README.md](widgets/README.md) for the folder layout. The live sync scripts remain at repository level because both widgets read the same sanitized snapshot.
 
-The insights card appears as a wide horizontal glass strip near the lower-left desktop area. It uses the same live snapshot, lifetime token total, and date-aligned daily token buckets for the last 90 days.
+The insights card appears as a wide horizontal glass strip near the lower-left desktop area. Both widgets use the macOS `desktopWindow` level, so app windows stay above them. It uses the same live snapshot, lifetime token total, and date-aligned daily token buckets for the last 90 days.
 
 You can add `scripts/start-desktop-widget.sh` as a macOS login item to restore the bubble in its previous position after restarting your Mac.
 
