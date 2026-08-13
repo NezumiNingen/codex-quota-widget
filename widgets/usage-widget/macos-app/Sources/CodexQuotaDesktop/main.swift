@@ -282,10 +282,12 @@ private struct UsageRow: View {
 
 private struct RecentUsageChart: View {
     let entries: [Snapshot.DailyUsage]
+    @State private var lineProgress: CGFloat = 1
 
     private var values: [Snapshot.DailyUsage] { Array(entries.suffix(7)) }
     private var total: Int64 { values.reduce(0) { $0 + $1.tokens } }
     private var maximum: Double { max(Double(values.map(\.tokens).max() ?? 1), 1) }
+    private var valuesKey: String { values.map { "\($0.date):\($0.tokens)" }.joined(separator: "|") }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -296,11 +298,8 @@ private struct RecentUsageChart: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(.black.opacity(0.08))
-                    Path { path in
-                        guard let first = points.first else { return }
-                        path.move(to: first)
-                        for point in points.dropFirst() { path.addLine(to: point) }
-                    }
+                    PolylineShape(points: points)
+                    .trim(from: 0, to: lineProgress)
                     .stroke(LinearGradient(colors: [.pink, .white], startPoint: .leading, endPoint: .trailing), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                     ForEach(Array(points.enumerated()), id: \.offset) { item in
                         Circle().fill(.white).frame(width: 5, height: 5).position(item.element)
@@ -320,6 +319,14 @@ private struct RecentUsageChart: View {
                 .foregroundStyle(.white.opacity(0.72))
         }
         .foregroundStyle(.white.opacity(0.92))
+        .onAppear {
+            lineProgress = 0
+            withAnimation(.easeInOut(duration: 0.8)) { lineProgress = 1 }
+        }
+        .onChange(of: valuesKey) { _, _ in
+            lineProgress = 0
+            withAnimation(.easeInOut(duration: 0.8)) { lineProgress = 1 }
+        }
     }
 
     private func chartPoints(in size: CGSize) -> [CGPoint] {
@@ -333,6 +340,18 @@ private struct RecentUsageChart: View {
                 y: 5 + height * (1 - CGFloat(Double(item.tokens) / maximum))
             )
         }
+    }
+}
+
+private struct PolylineShape: Shape {
+    let points: [CGPoint]
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        guard let first = points.first else { return path }
+        path.move(to: first)
+        for point in points.dropFirst() { path.addLine(to: point) }
+        return path
     }
 }
 
