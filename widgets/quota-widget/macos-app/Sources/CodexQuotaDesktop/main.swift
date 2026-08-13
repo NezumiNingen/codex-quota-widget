@@ -337,22 +337,23 @@ private struct RecentUsageChart: View {
 
 private struct UsageHeatmap: View {
     let entries: [Snapshot.DailyUsage]
-    @State private var range: UsageRange = .daily
-
-    private enum UsageRange: String, CaseIterable {
-        case daily = "每日"
-        case weekly = "每周"
-        case cumulative = "累计"
-    }
+    @State private var hoveredDate: String?
+    @State private var selectedDate: String?
 
     private var values: [Snapshot.DailyUsage] {
         Array(entries.suffix(90))
     }
     private var maximum: Double {
-        let raw = weeks.flatMap { $0 }.map { displayedTokens(for: $0) }
+        let raw = values.map(\.tokens)
         return max(Double(raw.max() ?? 1), 1)
     }
     private let cellStride: CGFloat = 15
+
+    private var focusedEntry: Snapshot.DailyUsage? {
+        let date = hoveredDate ?? selectedDate
+        guard let date else { return nil }
+        return values.first(where: { $0.date == date })
+    }
 
     private var weeks: [[Snapshot.DailyUsage]] {
         guard let first = values.first,
@@ -384,22 +385,28 @@ private struct UsageHeatmap: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
-                Spacer(minLength: 0)
-                HStack(spacing: 10) {
-                    ForEach(UsageRange.allCases, id: \.self) { item in
-                        Text(item.rawValue)
-                            .font(.system(size: 14, weight: item == range ? .semibold : .regular))
-                            .foregroundStyle(.white.opacity(item == range ? 0.94 : 0.46))
-                            .onTapGesture { range = item }
-                    }
+                Label("近 90 天用量", systemImage: "calendar")
+                    .font(.system(size: 16, weight: .bold))
+                Spacer(minLength: 3)
+                if let focusedEntry {
+                    Text("\(displayDate(focusedEntry.date)) · \(formatTokens(focusedEntry.tokens)) Token")
+                        .font(.system(size: 10, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .foregroundStyle(.white.opacity(0.86))
                 }
             }
             HStack(spacing: 3) {
                 ForEach(Array(weeks.enumerated()), id: \.offset) { week in
                     VStack(spacing: 2) {
                         ForEach(Array(week.element.enumerated()), id: \.offset) { day in
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(isVisibleDate(day.element) ? cellColor(Double(displayedTokens(for: day.element))) : .clear)
+                            HeatmapCell(
+                                item: day.element,
+                                visible: isVisibleDate(day.element),
+                                color: cellColor(Double(day.element.tokens)),
+                                hoveredDate: $hoveredDate,
+                                selectedDate: $selectedDate
+                            )
                                 .frame(width: 12, height: 12)
                         }
                     }
@@ -434,24 +441,6 @@ private struct UsageHeatmap: View {
         return item.date >= first && item.date <= last
     }
 
-    private func displayedTokens(for item: Snapshot.DailyUsage) -> Int64 {
-        guard isVisibleDate(item) else { return 0 }
-        switch range {
-        case .daily:
-            return item.tokens
-        case .weekly:
-            guard let date = isoDate(item.date) else { return item.tokens }
-            let calendar = Calendar.current
-            let start = calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? date
-            return values.filter {
-                guard let other = isoDate($0.date) else { return false }
-                return calendar.isDate(other, equalTo: start, toGranularity: .weekOfYear)
-            }.reduce(0) { $0 + $1.tokens }
-        case .cumulative:
-            return values.filter { $0.date <= item.date }.reduce(0) { $0 + $1.tokens }
-        }
-    }
-
     private func monthLabel(for date: String?) -> String {
         guard let date, let value = isoDate(date) else { return "" }
         let formatter = DateFormatter()
@@ -471,11 +460,42 @@ private struct UsageHeatmap: View {
     }
 }
 
+private struct HeatmapCell: View {
+    let item: Snapshot.DailyUsage
+    let visible: Bool
+    let color: Color
+    @Binding var hoveredDate: String?
+    @Binding var selectedDate: String?
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 3, style: .continuous)
+            .fill(visible ? color : .clear)
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                guard visible else { return }
+                hoveredDate = hovering ? item.date : nil
+            }
+            .onTapGesture {
+                guard visible else { return }
+                selectedDate = item.date
+            }
+            .help(visible ? "\(displayDate(item.date)) · \(formatTokens(item.tokens)) Token" : "")
+    }
+}
+
 private func isoDate(_ value: String) -> Date? {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd"
     formatter.locale = Locale(identifier: "en_US_POSIX")
     return formatter.date(from: value)
+}
+
+private func displayDate(_ value: String) -> String {
+    guard let date = isoDate(value) else { return value }
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "zh_CN")
+    formatter.dateFormat = "M月d日"
+    return formatter.string(from: date)
 }
 
 private struct InsightsPanelView: View {

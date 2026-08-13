@@ -27,6 +27,8 @@ See [widgets/README.md](widgets/README.md) for the folder layout. The live sync 
 
 The insights card appears as a wide horizontal glass strip near the lower-left desktop area. Both widgets use the macOS `desktopWindow` level, so app windows stay above them. It uses the same live snapshot, lifetime token total, and date-aligned daily token buckets for the last 90 days.
 
+The heatmap is fixed to daily Token buckets. Hovering or clicking a dated cell shows that day's live Token count.
+
 You can add `scripts/start-desktop-widget.sh` as a macOS login item to restore the bubble in its previous position after restarting your Mac.
 
 ## Usage
