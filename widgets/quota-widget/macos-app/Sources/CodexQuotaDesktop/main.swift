@@ -248,12 +248,8 @@ private struct UsageSummaryBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
             HStack(alignment: .firstTextBaseline) {
-            Label("Token 使用量", systemImage: "chart.bar.fill")
+                Label("Token 使用量", systemImage: "chart.bar.fill")
                     .font(.system(size: 17, weight: .bold))
-                Spacer()
-                Text("实时")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.72))
             }
             UsageRow(title: "今天", value: todayTokens)
             UsageRow(title: "本周", value: weekTokens)
@@ -531,17 +527,17 @@ private struct InsightsPanelView: View {
     }
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(alignment: .top, spacing: 14) {
             UsageSummaryBlock(todayTokens: todayTokens, weekTokens: weekTokens, totalTokens: totalTokens)
                 .frame(width: 188, alignment: .leading)
             RecentUsageChart(entries: recent)
                 .frame(width: 150, alignment: .leading)
             UsageHeatmap(entries: daily)
-                .frame(width: 288, alignment: .leading)
+                .frame(width: 212, alignment: .leading)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-        .frame(width: 700, height: 190, alignment: .topLeading)
+        .padding(.vertical, 10)
+        .frame(width: 620, height: 180, alignment: .topLeading)
         .background {
             ZStack {
                 VisualEffect()
@@ -638,7 +634,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
 
     private func createInsightsPanel() {
         let content = NSHostingView(rootView: InsightsPanelView())
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 700, height: 190), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 620, height: 180), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
         panel.contentView = content
         panel.isOpaque = false
         panel.backgroundColor = .clear
