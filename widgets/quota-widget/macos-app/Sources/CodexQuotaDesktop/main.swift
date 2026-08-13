@@ -642,7 +642,11 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         } else {
             panel.center()
         }
-        panel.orderFrontRegardless()
+        panel.orderFront(nil)
+        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak panel] in
+            panel?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
+        }
         self.panel = panel
         lockTimer = Timer.scheduledTimer(withTimeInterval: 90, repeats: false) { [weak self] _ in
             self?.lockToDesktop()
@@ -695,7 +699,11 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         } else {
             panel.setFrameOrigin(NSPoint(x: 72, y: 86))
         }
-        panel.orderFrontRegardless()
+        panel.orderFront(nil)
+        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak panel] in
+            panel?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
+        }
         insightsPanel = panel
         insightsLockTimer = Timer.scheduledTimer(withTimeInterval: 90, repeats: false) { [weak self] _ in
             self?.lockInsightsToDesktop()
