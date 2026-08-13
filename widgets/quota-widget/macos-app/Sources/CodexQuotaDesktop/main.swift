@@ -416,6 +416,7 @@ private struct UsageHeatmap: View {
                     Text(showMonthLabel(at: item.offset) ? monthLabel(for: item.element.first?.date) : "")
                         .font(.system(size: 9, weight: .medium))
                         .foregroundStyle(.white.opacity(0.64))
+                        .fixedSize(horizontal: true, vertical: false)
                         .frame(width: cellStride, alignment: .leading)
                 }
             }
