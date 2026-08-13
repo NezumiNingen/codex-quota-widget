@@ -73,10 +73,11 @@ private final class QuotaStore: ObservableObject {
 private struct VisualEffect: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
-        view.material = .dark
+        view.material = .underWindowBackground
         view.blendingMode = .behindWindow
         view.state = .active
         view.wantsLayer = true
+        view.alphaValue = 0.82
         return view
     }
     func updateNSView(_ view: NSVisualEffectView, context: Context) {}
@@ -153,6 +154,7 @@ private struct DesktopCard: View {
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.white.opacity(0.92))
             }
+            .shadow(color: .black.opacity(0.28), radius: 1, x: 0, y: 1)
             HStack(spacing: 18) {
                 Ring(value: value, diameter: 145)
                 VStack(alignment: .leading, spacing: 12) {
@@ -164,6 +166,7 @@ private struct DesktopCard: View {
                 }
                 .padding(.leading, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .shadow(color: .white.opacity(0.14), radius: 0.6, x: 0, y: 0)
             }
             VStack(spacing: 7) {
                 let shortValue = shortWindowValue(snapshot)
@@ -179,12 +182,13 @@ private struct DesktopCard: View {
                     Text(snapshot.shortWindow == nil ? "—" : "已用 \(Int((100 - shortValue).rounded()))%")
                 }.font(.system(size: 14, weight: .semibold)).foregroundStyle(.white.opacity(0.72))
             }
+            .shadow(color: .black.opacity(0.28), radius: 1, x: 0, y: 1)
         }
         .padding(24)
         .background {
             ZStack {
                 VisualEffect()
-                Color.white.opacity(0.10)
+                Color.black.opacity(0.06)
             }
             .clipShape(RoundedRectangle(cornerRadius: 58, style: .continuous))
         }

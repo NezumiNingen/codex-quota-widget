@@ -73,10 +73,11 @@ private final class QuotaStore: ObservableObject {
 private struct VisualEffect: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
-        view.material = .dark
+        view.material = .underWindowBackground
         view.blendingMode = .behindWindow
         view.state = .active
         view.wantsLayer = true
+        view.alphaValue = 0.82
         return view
     }
     func updateNSView(_ view: NSVisualEffectView, context: Context) {}
@@ -574,12 +575,13 @@ private struct InsightsPanelView: View {
                     .frame(width: 212, alignment: .leading)
             }
             .padding(.horizontal, 20)
+            .shadow(color: .black.opacity(0.28), radius: 1, x: 0, y: 1)
         }
         .frame(width: 578, height: 180, alignment: .center)
         .background {
             ZStack {
                 VisualEffect()
-                Color(red: 0.48, green: 0.49, blue: 0.50).opacity(0.68)
+                Color.black.opacity(0.04)
             }
             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         }
