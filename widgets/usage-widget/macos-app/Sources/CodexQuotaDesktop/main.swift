@@ -73,9 +73,10 @@ private final class QuotaStore: ObservableObject {
 private struct VisualEffect: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
-        view.material = .underWindowBackground
+        view.material = .dark
         view.blendingMode = .behindWindow
         view.state = .active
+        view.wantsLayer = true
         return view
     }
     func updateNSView(_ view: NSVisualEffectView, context: Context) {}
@@ -183,7 +184,7 @@ private struct DesktopCard: View {
         .background {
             ZStack {
                 VisualEffect()
-                Color(red: 0.48, green: 0.49, blue: 0.50).opacity(0.68)
+                Color.white.opacity(0.10)
             }
             .clipShape(RoundedRectangle(cornerRadius: 58, style: .continuous))
         }

@@ -1,6 +1,6 @@
 # Codex Quota Widget
 
-A compact macOS desktop bubble that shows your live Codex plan, remaining quota, reset time, and usage progress.
+A compact macOS desktop bubble with a transparent glass background that shows your live Codex plan, remaining quota, reset time, and usage progress.
 
 See [CHANGELOG.md](CHANGELOG.md) for version-by-version updates.
 
@@ -22,7 +22,7 @@ The bubble displays the live Credits count reported by Codex as points (for exam
 
 ## Persistent desktop bubble
 
-The plugin includes two independent frosted-glass desktop widgets. The original quota bubble is in `widgets/quota-widget/`; the usage insights bubble is in `widgets/usage-widget/`. Each folder has its own `start.sh`, executable, position key, and LaunchAgent, so restarting one does not restart the other.
+The plugin includes two independent transparent frosted-glass desktop widgets using macOS `NSVisualEffectView` with `behindWindow` blending. The original quota bubble is in `widgets/quota-widget/`; the usage insights bubble is in `widgets/usage-widget/`. Each folder has its own `start.sh`, executable, position key, and LaunchAgent, so restarting one does not restart the other.
 
 See [widgets/README.md](widgets/README.md) for the folder layout. The live sync scripts remain at repository level because both widgets read the same sanitized snapshot.
 
