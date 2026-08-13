@@ -14,6 +14,8 @@ All notable changes to Codex Quota Widget are documented here.
 
 ### Changed
 
+- Removed an unused legacy goal-row view and skipped unchanged snapshot decoding to reduce UI work.
+- Centralized desktop-window presentation and made timer callbacks explicitly main-actor safe.
 - Unified the desktop bubble typography with a rounded typeface.
 - Enlarged the quota ring and adjusted the bubble to a 250 px layout.
 - Increased the spacing between the quota ring and the left-aligned details column.

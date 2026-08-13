@@ -53,6 +53,7 @@ private let previewSnapshot = Snapshot(
 private final class QuotaStore: ObservableObject {
     @Published private(set) var snapshot: Snapshot?
     private let liveURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex/codex-quota-live.json")
+    private var lastModificationDate: Date?
 
     init() {
         reload()
@@ -62,10 +63,15 @@ private final class QuotaStore: ObservableObject {
     }
 
     func reload() {
-        guard let data = try? Data(contentsOf: liveURL), let value = try? JSONDecoder().decode(Snapshot.self, from: data) else {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: liveURL.path),
+              let modificationDate = attributes[.modificationDate] as? Date else {
             snapshot = nil
+            lastModificationDate = nil
             return
         }
+        guard modificationDate != lastModificationDate else { return }
+        guard let data = try? Data(contentsOf: liveURL), let value = try? JSONDecoder().decode(Snapshot.self, from: data) else { return }
+        lastModificationDate = modificationDate
         snapshot = value
     }
 }
@@ -211,40 +217,6 @@ private func weekdayLabel(_ isoDate: String) -> String {
     guard let date = formatter.date(from: isoDate) else { return "·" }
     let labels = ["日", "一", "二", "三", "四", "五", "六"]
     return labels[Calendar.current.component(.weekday, from: date) - 1]
-}
-
-private struct GoalRow: View {
-    let title: String
-    let tokens: Int64
-    let goal: Int64
-
-    private var percent: Int {
-        guard goal > 0 else { return 0 }
-        return Int((Double(tokens) / Double(goal) * 100).rounded())
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 4) {
-                Text(title).frame(width: 55, alignment: .leading)
-                Text("\(formatTokens(tokens)) / \(formatTokens(goal))")
-                    .font(.system(size: 14, weight: .bold))
-                    .lineLimit(1)
-                Spacer(minLength: 2)
-                Text("\(percent)%").font(.system(size: 14, weight: .bold))
-            }
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.18))
-                    Capsule()
-                        .fill(LinearGradient(colors: [.pink, .purple], startPoint: .leading, endPoint: .trailing))
-                        .frame(width: proxy.size.width * min(1, max(0, Double(percent) / 100)))
-                }
-            }
-            .frame(height: 7)
-        }
-        .foregroundStyle(.white.opacity(0.92))
-    }
 }
 
 private struct UsageSummaryBlock: View {
@@ -608,6 +580,10 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private var insightsLockTimer: Timer?
     private let mode: WidgetMode
 
+    private var desktopLevel: NSWindow.Level {
+        NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
+    }
+
     override init() {
         mode = CommandLine.arguments.contains("--usage") ? .usage : .quota
         super.init()
@@ -630,7 +606,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary]
         panel.acceptsMouseMovedEvents = true
         panel.ignoresMouseEvents = false
@@ -642,14 +617,10 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         } else {
             panel.center()
         }
-        panel.orderFront(nil)
-        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak panel] in
-            panel?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
-        }
+        showOnDesktop(panel)
         self.panel = panel
         lockTimer = Timer.scheduledTimer(withTimeInterval: 90, repeats: false) { [weak self] _ in
-            self?.lockToDesktop()
+            Task { @MainActor [weak self] in self?.lockToDesktop() }
         }
     }
 
@@ -660,21 +631,21 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             guard moveMode else { return }
             lockTimer?.invalidate()
             lockTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in
-                self?.lockToDesktop()
+                Task { @MainActor [weak self] in self?.lockToDesktop() }
             }
         } else if movedWindow === insightsPanel {
             UserDefaults.standard.set(NSStringFromPoint(movedWindow.frame.origin), forKey: insightsPositionKey)
             guard insightsMoveMode else { return }
             insightsLockTimer?.invalidate()
             insightsLockTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in
-                self?.lockInsightsToDesktop()
+                Task { @MainActor [weak self] in self?.lockInsightsToDesktop() }
             }
         }
     }
 
     private func lockToDesktop() {
         guard moveMode, let panel else { return }
-        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
+        panel.level = desktopLevel
         moveMode = false
     }
 
@@ -685,7 +656,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary]
         panel.acceptsMouseMovedEvents = true
         panel.ignoresMouseEvents = false
@@ -699,21 +669,26 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         } else {
             panel.setFrameOrigin(NSPoint(x: 72, y: 86))
         }
-        panel.orderFront(nil)
-        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak panel] in
-            panel?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
-        }
+        showOnDesktop(panel)
         insightsPanel = panel
         insightsLockTimer = Timer.scheduledTimer(withTimeInterval: 90, repeats: false) { [weak self] _ in
-            self?.lockInsightsToDesktop()
+            Task { @MainActor [weak self] in self?.lockInsightsToDesktop() }
         }
     }
 
     private func lockInsightsToDesktop() {
         guard insightsMoveMode, let insightsPanel else { return }
-        insightsPanel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
+        insightsPanel.level = desktopLevel
         insightsMoveMode = false
+    }
+
+    private func showOnDesktop(_ panel: NSPanel) {
+        panel.level = desktopLevel
+        panel.orderFront(nil)
+        let level = desktopLevel
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak panel] in
+            panel?.level = level
+        }
     }
 }
 
