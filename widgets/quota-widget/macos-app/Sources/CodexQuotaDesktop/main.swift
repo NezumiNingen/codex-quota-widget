@@ -352,19 +352,24 @@ private struct UsageHeatmap: View {
         let raw = weeks.flatMap { $0 }.map { displayedTokens(for: $0) }
         return max(Double(raw.max() ?? 1), 1)
     }
-    private var total: Int64 { values.reduce(0) { $0 + $1.tokens } }
+    private let cellStride: CGFloat = 15
 
     private var weeks: [[Snapshot.DailyUsage]] {
-        guard let first = values.first, let firstDate = isoDate(first.date) else {
+        guard let first = values.first,
+              let firstDate = isoDate(first.date),
+              let last = values.last,
+              let lastDate = isoDate(last.date) else {
             return Array(repeating: Array(repeating: Snapshot.DailyUsage(date: "", tokens: 0), count: 7), count: 13)
         }
         let calendar = Calendar.current
         let mondayOffset = (calendar.component(.weekday, from: firstDate) + 5) % 7
         guard let start = calendar.date(byAdding: .day, value: -mondayOffset, to: firstDate) else { return [] }
+        let days = calendar.dateComponents([.day], from: start, to: lastDate).day ?? 0
+        let weekCount = max(1, days / 7 + 1)
         let byDate = Dictionary(uniqueKeysWithValues: values.map { ($0.date, $0.tokens) })
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        return (0..<13).map { week in
+        return (0..<weekCount).map { week in
             (0..<7).map { weekday in
                 let offset = week * 7 + weekday
                 guard let date = calendar.date(byAdding: .day, value: offset, to: start) else {
@@ -379,32 +384,23 @@ private struct UsageHeatmap: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
-                Label("近 90 天用量", systemImage: "calendar")
-                    .font(.system(size: 16, weight: .bold))
-                Spacer(minLength: 3)
+                Spacer(minLength: 0)
                 HStack(spacing: 10) {
                     ForEach(UsageRange.allCases, id: \.self) { item in
                         Text(item.rawValue)
-                            .font(.system(size: 11, weight: item == range ? .bold : .medium))
+                            .font(.system(size: 14, weight: item == range ? .semibold : .regular))
                             .foregroundStyle(.white.opacity(item == range ? 0.94 : 0.46))
                             .onTapGesture { range = item }
                     }
                 }
             }
-            HStack(alignment: .top, spacing: 4) {
-                VStack(spacing: 3) {
-                    ForEach(["一", "三", "五", "日"], id: \.self) { label in
-                        Text(label).font(.system(size: 8, weight: .medium)).frame(height: 12)
-                    }
-                }
-                HStack(spacing: 3) {
-                    ForEach(Array(weeks.enumerated()), id: \.offset) { week in
-                        VStack(spacing: 2) {
-                            ForEach(Array(week.element.enumerated()), id: \.offset) { day in
-                                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                    .fill(cellColor(Double(displayedTokens(for: day.element))))
-                                    .frame(width: 12, height: 12)
-                            }
+            HStack(spacing: 3) {
+                ForEach(Array(weeks.enumerated()), id: \.offset) { week in
+                    VStack(spacing: 2) {
+                        ForEach(Array(week.element.enumerated()), id: \.offset) { day in
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(isVisibleDate(day.element) ? cellColor(Double(displayedTokens(for: day.element))) : .clear)
+                                .frame(width: 12, height: 12)
                         }
                     }
                 }
@@ -414,31 +410,32 @@ private struct UsageHeatmap: View {
                     Text(showMonthLabel(at: item.offset) ? monthLabel(for: item.element.first?.date) : "")
                         .font(.system(size: 9, weight: .medium))
                         .foregroundStyle(.white.opacity(0.64))
-                        .frame(width: 15, alignment: .leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(width: cellStride, alignment: .leading)
                 }
-            }
-            HStack(spacing: 4) {
-                Text("少").font(.system(size: 9, weight: .medium))
-                ForEach(0..<5, id: \.self) { step in
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(cellColor(maximum * Double(step) / 4))
-                        .frame(width: 12, height: 8)
-                }
-                Text("多").font(.system(size: 9, weight: .medium))
-                Spacer()
             }
         }
         .foregroundStyle(.white.opacity(0.92))
     }
 
     private func cellColor(_ tokens: Double) -> Color {
+        guard tokens > 0 else { return Color.white.opacity(0.055) }
         let ratio = min(1, max(0, tokens / maximum))
-        return Color(red: 0.08 + 0.24 * ratio, green: 0.10 + 0.42 * ratio, blue: 0.14 + 0.72 * ratio)
-            .opacity(0.28 + 0.72 * ratio)
+        let visibleLevel = max(0.26, pow(ratio, 0.42))
+        return Color(red: 0.12 + 0.20 * visibleLevel,
+                     green: 0.20 + 0.36 * visibleLevel,
+                     blue: 0.34 + 0.56 * visibleLevel)
+            .opacity(0.58 + 0.38 * visibleLevel)
+    }
+
+    private func isVisibleDate(_ item: Snapshot.DailyUsage) -> Bool {
+        guard let first = values.first?.date,
+              let last = values.last?.date,
+              !item.date.isEmpty else { return false }
+        return item.date >= first && item.date <= last
     }
 
     private func displayedTokens(for item: Snapshot.DailyUsage) -> Int64 {
+        guard isVisibleDate(item) else { return 0 }
         switch range {
         case .daily:
             return item.tokens

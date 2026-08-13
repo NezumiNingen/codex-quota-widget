@@ -22,6 +22,7 @@ All notable changes to Codex Quota Widget are documented here.
 - Kept the lifetime token total from the usage summary as the source for the new cumulative row.
 - Split the original quota bubble and the usage insights bubble into separate widget folders and processes.
 - Put both widget windows at the macOS desktop window level so they stay beneath app windows.
+- Corrected the Token heatmap to use real calendar weeks, weekday rows, month boundaries, and only the dates returned by Codex.
 
 ## 0.1.0
 

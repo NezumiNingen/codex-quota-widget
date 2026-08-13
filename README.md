@@ -11,7 +11,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version-by-version updates.
 - Uses one rounded typeface throughout the bubble.
 - Enlarges the quota ring and adjusts the bubble to a roomier 250 px layout.
 - Adds spacing between the ring and the detail column for better readability.
-- Adds a separate wide glass insights card for today/week/lifetime Token usage, a recent 7-day Token chart, and a date-aligned 90-day Token heatmap.
+- Adds a separate wide glass insights card for today/week/lifetime Token usage, a recent 7-day Token chart, and a date-aligned 90-day Token heatmap with future dates left empty.
 
 ## Live data and privacy
 
