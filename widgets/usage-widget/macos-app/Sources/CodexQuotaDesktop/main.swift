@@ -554,9 +554,9 @@ private struct InsightsPanelView: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 12) {
             UsageSummaryBlock(todayTokens: todayTokens, weekTokens: weekTokens, totalTokens: totalTokens)
-                .frame(width: 170, alignment: .leading)
+                .frame(width: 150, alignment: .leading)
             RecentUsageChart(entries: recent)
                 .frame(width: 150, alignment: .leading)
             UsageHeatmap(entries: daily)
@@ -564,7 +564,7 @@ private struct InsightsPanelView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
-        .frame(width: 602, height: 180, alignment: .topLeading)
+        .frame(width: 578, height: 180, alignment: .topLeading)
         .background {
             ZStack {
                 VisualEffect()
@@ -661,7 +661,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
 
     private func createInsightsPanel() {
         let content = NSHostingView(rootView: InsightsPanelView())
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 602, height: 180), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 578, height: 180), styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
         panel.contentView = content
         panel.isOpaque = false
         panel.backgroundColor = .clear
