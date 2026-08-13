@@ -390,10 +390,13 @@ private struct UsageHeatmap: View {
                 Spacer(minLength: 3)
                 if let focusedEntry {
                     Text("\(displayDate(focusedEntry.date)) · \(formatTokens(focusedEntry.tokens)) Token")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                         .foregroundStyle(.white.opacity(0.86))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.black.opacity(0.16), in: Capsule())
                 }
             }
             HStack(spacing: 3) {
@@ -591,6 +594,8 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         panel.hasShadow = true
         panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary]
+        panel.acceptsMouseMovedEvents = true
+        panel.ignoresMouseEvents = false
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
         panel.delegate = self
@@ -640,6 +645,8 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         panel.hasShadow = true
         panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary]
+        panel.acceptsMouseMovedEvents = true
+        panel.ignoresMouseEvents = false
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
         panel.delegate = self
