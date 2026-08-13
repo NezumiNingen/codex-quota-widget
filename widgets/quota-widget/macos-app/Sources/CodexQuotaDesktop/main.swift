@@ -554,7 +554,7 @@ private struct InsightsPanelView: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             UsageSummaryBlock(todayTokens: todayTokens, weekTokens: weekTokens, totalTokens: totalTokens)
                 .frame(width: 150, alignment: .leading)
             RecentUsageChart(entries: recent)
