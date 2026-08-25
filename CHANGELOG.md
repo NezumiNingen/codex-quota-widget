@@ -14,6 +14,7 @@ All notable changes to Codex Quota Widget are documented here.
 
 ### Changed
 
+- Selected the weekly and five-hour windows by duration so the bottom five-hour bar cannot read the weekly limit when Codex changes primary/secondary ordering.
 - Removed an unused legacy goal-row view and skipped unchanged snapshot decoding to reduce UI work.
 - Centralized desktop-window presentation and made timer callbacks explicitly main-actor safe.
 - Unified the desktop bubble typography with a rounded typeface.

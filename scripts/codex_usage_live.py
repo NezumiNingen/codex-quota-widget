@@ -85,6 +85,24 @@ def window_snapshot(window: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
+def rate_limit_windows(limits: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return available windows without relying on primary/secondary ordering."""
+    return [
+        window
+        for key in ("primary", "secondary")
+        if isinstance(window := limits.get(key), dict) and window.get("windowDurationMins")
+    ]
+
+
+def select_window(windows: list[dict[str, Any]], duration: int, *, longest: bool = False) -> dict[str, Any] | None:
+    if not windows:
+        return None
+    exact = [window for window in windows if window.get("windowDurationMins") == duration]
+    if exact:
+        return exact[0]
+    return max(windows, key=lambda window: int(window.get("windowDurationMins") or 0)) if longest else min(windows, key=lambda window: int(window.get("windowDurationMins") or 0))
+
+
 def fetch_snapshot() -> dict[str, Any]:
     binary = codex_path()
     if not Path(binary).exists() and not shutil.which(binary):
@@ -114,8 +132,10 @@ def fetch_snapshot() -> dict[str, Any]:
             process.kill()
 
     limits = response[2].get("rateLimitsByLimitId", {}).get("codex") or response[2]["rateLimits"]
-    primary = limits.get("primary") or {}
-    primary_snapshot = window_snapshot(primary) or {"remainingPercent": 0, "period": "未设置", "resetAt": "未设置"}
+    windows = rate_limit_windows(limits)
+    long_window = select_window(windows, 10_080, longest=True)
+    short_window = select_window(windows, 300)
+    primary_snapshot = window_snapshot(long_window) or {"remainingPercent": 0, "period": "未设置", "resetAt": "未设置"}
     account = response[4].get("account") or {}
     plan = str(limits.get("planType") or account.get("planType") or "unknown").upper()
     credits = limits.get("credits") or {}
@@ -141,7 +161,7 @@ def fetch_snapshot() -> dict[str, Any]:
         "remainingPercent": primary_snapshot["remainingPercent"],
         "period": primary_snapshot["period"],
         "resetAt": primary_snapshot["resetAt"],
-        "shortWindow": window_snapshot(limits.get("secondary") or {}),
+        "shortWindow": window_snapshot(short_window),
         "plan": plan,
         "source": "Codex app-server",
         "updatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
