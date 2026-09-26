@@ -19,11 +19,25 @@ from typing import Any
 
 
 OUTPUT = Path("~/.codex/codex-quota-live.json").expanduser()
-FALLBACK_CODEX = Path("/Applications/ChatGPT.app/Contents/Resources/codex")
+CODEX_CANDIDATES = (
+    Path("/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"),
+    Path("/Applications/ChatGPT.app/Contents/Resources/codex"),
+)
 
 
 def codex_path() -> str:
-    return shutil.which("codex") or str(FALLBACK_CODEX)
+    """Resolve the CLI for both interactive shells and LaunchAgents.
+
+    LaunchAgents do not inherit the user's shell PATH, so relying only on
+    ``shutil.which`` makes the live updater silently fail at login.
+    """
+    from_path = shutil.which("codex")
+    if from_path:
+        return from_path
+    for candidate in CODEX_CANDIDATES:
+        if candidate.is_file() and candidate.stat().st_mode & 0o111:
+            return str(candidate)
+    return str(CODEX_CANDIDATES[0])
 
 
 def send(process: subprocess.Popen[str], message: dict[str, Any]) -> None:
