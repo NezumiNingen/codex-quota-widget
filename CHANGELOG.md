@@ -6,6 +6,7 @@ All notable changes to Codex Quota Widget are documented here.
 
 ### Added
 
+- An independent menu-bar companion for the quota card; the original desktop bubble remains available.
 - Live Codex Credits balance, displayed as points and refreshed every minute.
 - A dedicated bottom bar for the 5-hour quota window, which activates automatically when the local Codex API returns that window.
 - A lower-left horizontal glass insights card with Token goals, a recent 7-day line chart, and a 90-day daily token heatmap.

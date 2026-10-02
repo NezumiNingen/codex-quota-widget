@@ -24,6 +24,8 @@ The bubble displays the live Credits count reported by Codex as points (for exam
 
 The plugin includes two independent transparent frosted-glass desktop widgets using macOS `NSVisualEffectView` with `behindWindow` blending. The original quota bubble is in `widgets/quota-widget/`; the usage insights bubble is in `widgets/usage-widget/`. Each folder has its own `start.sh`, executable, position key, and LaunchAgent, so restarting one does not restart the other.
 
+The quota executable also supports an independent menu-bar companion. Launch the same executable with `--menu-bar` to add a macOS status-bar icon that opens the unchanged quota card in a popover; this does not replace or remove the persistent desktop bubble.
+
 See [widgets/README.md](widgets/README.md) for the folder layout. The live sync scripts remain at repository level because both widgets read the same sanitized snapshot.
 
 The insights card appears as a wide horizontal glass strip near the lower-left desktop area. Both widgets use the macOS `desktopWindow` level, so app windows stay above them. It uses the same live snapshot, lifetime token total, and date-aligned daily token buckets for the last 90 days.

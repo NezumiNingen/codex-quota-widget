@@ -568,6 +568,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private enum WidgetMode {
         case quota
         case usage
+        case menuBar
     }
 
     private var panel: NSPanel?
@@ -587,7 +588,13 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     }
 
     override init() {
-        mode = CommandLine.arguments.contains("--usage") ? .usage : .quota
+        if CommandLine.arguments.contains("--usage") {
+            mode = .usage
+        } else if CommandLine.arguments.contains("--menu-bar") {
+            mode = .menuBar
+        } else {
+            mode = .quota
+        }
         super.init()
     }
 
@@ -595,9 +602,11 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         NSApplication.shared.setActivationPolicy(.accessory)
         switch mode {
         case .quota:
-            createQuotaStatusItem()
+            createQuotaPanel()
         case .usage:
             createInsightsPanel()
+        case .menuBar:
+            createQuotaStatusItem()
         }
     }
 
