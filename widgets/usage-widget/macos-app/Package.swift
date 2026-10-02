@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "CodexUsageWidget",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v13)],
     products: [.executable(name: "CodexUsageWidget", targets: ["CodexQuotaDesktop"])],
     targets: [.executableTarget(name: "CodexQuotaDesktop")]
 )

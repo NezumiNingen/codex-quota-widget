@@ -295,7 +295,7 @@ private struct RecentUsageChart: View {
             lineProgress = 0
             withAnimation(.easeInOut(duration: 0.8)) { lineProgress = 1 }
         }
-        .onChange(of: valuesKey) { _, _ in
+        .onChange(of: valuesKey) { _ in
             lineProgress = 0
             withAnimation(.easeInOut(duration: 0.8)) { lineProgress = 1 }
         }
