@@ -594,6 +594,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private var insightsPanel: NSPanel?
     private var statusItem: NSStatusItem?
     private var statusPopover: NSPopover?
+    private var syncProcess: Process?
     private let positionKey = "CodexQuotaDesktop.position"
     private let insightsPositionKey = "CodexQuotaInsights.position"
     private var moveMode = true
@@ -649,6 +650,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         statusItem = item
         statusPopover = popover
         installMenuBarLaunchAgentIfBundled()
+        startLiveSyncIfBundled()
     }
 
     @objc private func toggleQuotaPopover(_ sender: Any?) {
@@ -691,6 +693,42 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             try data.write(to: plistURL, options: .atomic)
         } catch {
             NSLog("codex-quota menu-bar persistence setup failed: %@", error.localizedDescription)
+        }
+    }
+
+    private func startLiveSyncIfBundled() {
+        guard Bundle.main.bundleIdentifier == "com.local.codex-quota.menubar",
+              syncProcess?.isRunning != true,
+              let script = Bundle.main.url(forResource: "codex_usage_live", withExtension: "py") else { return }
+        let pythonCandidates = [
+            "/usr/bin/python3",
+            "/opt/homebrew/bin/python3",
+            "/usr/local/bin/python3",
+            "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python"
+        ]
+        guard let python = pythonCandidates.first(where: FileManager.default.isExecutableFile(atPath:)) else {
+            NSLog("codex-quota live sync unavailable: Python 3 was not found")
+            return
+        }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: python)
+        process.arguments = [script.path, "--watch", "--interval", "60"]
+        process.standardInput = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        process.terminationHandler = { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.mode == .menuBar else { return }
+                self.syncProcess = nil
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                self.startLiveSyncIfBundled()
+            }
+        }
+        do {
+            try process.run()
+            syncProcess = process
+        } catch {
+            NSLog("codex-quota live sync failed to start: %@", error.localizedDescription)
         }
     }
 
