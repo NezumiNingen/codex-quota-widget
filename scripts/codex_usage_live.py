@@ -22,6 +22,10 @@ OUTPUT = Path("~/.codex/codex-quota-live.json").expanduser()
 CODEX_CANDIDATES = (
     Path("/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"),
     Path("/Applications/ChatGPT.app/Contents/Resources/codex"),
+    Path("/Applications/Codex.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"),
+    Path("/Applications/Codex.app/Contents/Resources/codex"),
+    Path.home() / "Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
+    Path.home() / "Applications/Codex.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
 )
 
 
