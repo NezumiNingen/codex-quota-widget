@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 import SwiftUI
 
 private struct Snapshot: Codable {
@@ -662,6 +663,16 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private func installMenuBarLaunchAgentIfBundled() {
         guard Bundle.main.bundleIdentifier == "com.local.codex-quota.menubar",
               let executable = Bundle.main.executableURL?.path else { return }
+
+        if #available(macOS 13.0, *) {
+            do {
+                try SMAppService.mainApp.register()
+                return
+            } catch {
+                NSLog("codex-quota system login-item registration unavailable: %@", error.localizedDescription)
+            }
+        }
+
         let launchAgents = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/LaunchAgents", isDirectory: true)
         let plistURL = launchAgents.appendingPathComponent("com.local.codex-quota-menubar.plist")
