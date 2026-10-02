@@ -572,6 +572,8 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
 
     private var panel: NSPanel?
     private var insightsPanel: NSPanel?
+    private var statusItem: NSStatusItem?
+    private var statusPopover: NSPopover?
     private let positionKey = "CodexQuotaDesktop.position"
     private let insightsPositionKey = "CodexQuotaInsights.position"
     private var moveMode = true
@@ -593,9 +595,39 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         NSApplication.shared.setActivationPolicy(.accessory)
         switch mode {
         case .quota:
-            createQuotaPanel()
+            createQuotaStatusItem()
         case .usage:
             createInsightsPanel()
+        }
+    }
+
+    private func createQuotaStatusItem() {
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = item.button {
+            let image = NSImage(systemSymbolName: "chart.bar.fill", accessibilityDescription: "Codex 额度")
+            image?.isTemplate = true
+            button.image = image
+            button.imagePosition = .imageOnly
+            button.toolTip = "Codex 额度"
+            button.target = self
+            button.action = #selector(toggleQuotaPopover(_:))
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = true
+        popover.contentSize = NSSize(width: 250, height: 250)
+        popover.contentViewController = NSHostingController(rootView: DesktopCard())
+        statusItem = item
+        statusPopover = popover
+    }
+
+    @objc private func toggleQuotaPopover(_ sender: Any?) {
+        guard let button = statusItem?.button, let popover = statusPopover else { return }
+        if popover.isShown {
+            popover.performClose(sender)
+        } else {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
     }
 
