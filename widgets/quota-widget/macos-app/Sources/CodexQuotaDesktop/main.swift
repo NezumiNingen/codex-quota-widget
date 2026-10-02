@@ -123,6 +123,12 @@ private struct Info: View {
 
 private struct DesktopCard: View {
     @StateObject private var store = QuotaStore()
+    let hasInnerFrame: Bool
+
+    init(hasInnerFrame: Bool = true) {
+        self.hasInnerFrame = hasInnerFrame
+    }
+
     private var displayedSnapshot: Snapshot { store.snapshot ?? previewSnapshot }
     private var value: Double { min(max(displayedSnapshot.remainingPercent, 0), 100) }
 
@@ -192,13 +198,25 @@ private struct DesktopCard: View {
         }
         .padding(24)
         .background {
-            ZStack {
-                VisualEffect()
-                Color.white.opacity(0.06)
+            if hasInnerFrame {
+                ZStack {
+                    VisualEffect()
+                    Color.white.opacity(0.06)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 58, style: .continuous))
+            } else {
+                ZStack {
+                    VisualEffect()
+                    Color.white.opacity(0.06)
+                }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 58, style: .continuous))
         }
-        .overlay(RoundedRectangle(cornerRadius: 58, style: .continuous).stroke(.white.opacity(0.24), lineWidth: 1))
+        .overlay {
+            if hasInnerFrame {
+                RoundedRectangle(cornerRadius: 58, style: .continuous)
+                    .stroke(.white.opacity(0.24), lineWidth: 1)
+            }
+        }
     }
 }
 
@@ -590,7 +608,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     override init() {
         if CommandLine.arguments.contains("--usage") {
             mode = .usage
-        } else if CommandLine.arguments.contains("--menu-bar") {
+        } else if CommandLine.arguments.contains("--menu-bar") || Bundle.main.bundleIdentifier == "com.local.codex-quota.menubar" {
             mode = .menuBar
         } else {
             mode = .quota
@@ -626,9 +644,10 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         popover.behavior = .transient
         popover.animates = true
         popover.contentSize = NSSize(width: 250, height: 250)
-        popover.contentViewController = NSHostingController(rootView: DesktopCard())
+        popover.contentViewController = NSHostingController(rootView: DesktopCard(hasInnerFrame: false))
         statusItem = item
         statusPopover = popover
+        installMenuBarLaunchAgentIfBundled()
     }
 
     @objc private func toggleQuotaPopover(_ sender: Any?) {
@@ -637,6 +656,30 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             popover.performClose(sender)
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+    }
+
+    private func installMenuBarLaunchAgentIfBundled() {
+        guard Bundle.main.bundleIdentifier == "com.local.codex-quota.menubar",
+              let executable = Bundle.main.executableURL?.path else { return }
+        let launchAgents = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/LaunchAgents", isDirectory: true)
+        let plistURL = launchAgents.appendingPathComponent("com.local.codex-quota-menubar.plist")
+        let plist: [String: Any] = [
+            "Label": "com.local.codex-quota-menubar",
+            "ProgramArguments": [executable, "--menu-bar"],
+            "RunAtLoad": true,
+            "KeepAlive": true,
+            "ProcessType": "Interactive",
+            "LimitLoadToSessionType": ["Aqua"]
+        ]
+        guard PropertyListSerialization.propertyList(plist, isValidFor: .xml) else { return }
+        do {
+            try FileManager.default.createDirectory(at: launchAgents, withIntermediateDirectories: true)
+            let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+            try data.write(to: plistURL, options: .atomic)
+        } catch {
+            NSLog("codex-quota menu-bar persistence setup failed: %@", error.localizedDescription)
         }
     }
 
